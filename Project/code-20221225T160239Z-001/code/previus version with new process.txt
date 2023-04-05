@@ -1,0 +1,1019 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <string.h>
+#include "headers.h"
+
+struct algorithm{
+    char name[3];
+    bool preemptive;
+    int Quantum;
+};
+struct PCB
+{
+    int arrivaltime;
+    int priority;
+    int runningtime;
+    int remaining_time;
+    int id;
+    int finishtime;
+    int pid;
+    int start_time;
+};
+//--------------------------------------
+//priority queue
+typedef struct node{
+    struct PCB  process;
+    struct node * next;
+}Node;
+Node*newNode(struct PCB newprocess){
+    Node*temp = (Node*)malloc(sizeof(Node));
+    temp->process = newprocess;
+    return temp;
+}
+struct PCB *peek(Node**head){
+    return &((*head)->process);
+}
+void dequeue(Node ** head){
+    Node*temp = *head;
+    (*head) = (*head)->next;
+    temp = NULL;
+}
+void enqueue_priority(Node**head,struct PCB process){
+    Node * start = (*head);
+    Node * temp = newNode(process);
+    if((*head) == NULL){
+        (*head) = temp;
+        temp->next = NULL;
+        return;
+    }
+    else if((*head)->process.priority < process.priority){
+        temp->next = *head;
+        (*head) = temp;
+    }
+    else{
+        while((start->next != NULL) && (start->next->process.priority < process.priority)){
+            start = start -> next;
+        }
+        temp -> next = start -> next;
+        start -> next = temp;
+    }
+}
+bool isEmpty(Node**head){
+    return ((*head) == NULL);
+}
+void enqueue_sjf(Node**head,struct PCB process){
+    Node * start = (*head);
+    Node * temp = newNode(process);
+    if((*head) == NULL){
+        (*head) = temp;
+        temp->next = NULL;
+        return;
+    }
+    else if((*head)->process.runningtime < process.runningtime){
+        temp->next = *head;
+        (*head) = temp;
+    }
+    else{
+        while((start->next != NULL) && (start->next->process.runningtime < process.runningtime)){
+            start = start -> next;
+        }
+        temp -> next = start -> next;
+        start -> next = temp;
+    }
+}
+void enqueue_srt(Node**head,struct PCB process){
+    Node * start = (*head);
+    Node * temp = newNode(process);
+    if((*head) == NULL){
+        (*head) = temp;
+        temp->next = NULL;
+        return;
+    }
+    else if((*head)->process.remaining_time < process.remaining_time){
+        temp->next = *head;
+        (*head) = temp;
+    }
+    else{
+        while((start->next != NULL) && (start->next->process.remaining_time < process.remaining_time)){
+            start = start -> next;
+        }
+        temp -> next = start -> next;
+        start -> next = temp;
+    }
+}
+void enqueue_rr(Node**head,struct PCB process){
+    Node * start = (*head);
+    Node * temp = newNode(process);
+    if((*head) == NULL){
+        (*head) = temp;
+        temp->next = NULL;
+        return;
+    }
+    else{
+        while(start->next != NULL){
+            start = start -> next;
+        }
+        temp -> next = start -> next;
+        start -> next = temp;
+    }
+}
+//------------------------------------------
+//datastructures required
+int working;
+int pid;
+struct algorithm algo;
+key_t remaining;
+key_t receiving;
+key_t shm_pid;
+Node * ready_queue;
+Node * blocked_queue;
+Node * finished;
+struct PCB* running; //points to the running process
+struct PCB received_process;
+struct PCB process_from_blocked_queue;
+int shmid;
+int qid;
+int *shmaddr_remaining_time;
+int shm_pid_id;
+int *shmaddr_pid;
+Node* MFL_queue [11];
+
+//------------------------------------------
+void myhandler(int);
+void myhandler2(int);
+void new_process(int*,int);
+//------------------------------------------
+void SJF(int);
+void SRT(int);
+void HPF(int);
+void HPF_preemptive(int);
+void RR(int);
+void MFL(int);
+//------------------------------------------
+int main(int argc, char *argv[])
+{
+    signal(SIGINT,myhandler);
+    //signal(SIGUSR2,myhandler2);
+    //-------------------------------------------
+    printf("scheduler started\n");
+    working = 0;
+    receiving = ftok("lab.txt",1);
+    remaining = ftok("lab.txt",2);
+    shm_pid = ftok("lab.txt",3);
+    shmid = shmget(remaining, sizeof(int), IPC_CREAT | 0644);
+    shm_pid_id = shmget(shm_pid, sizeof(int), IPC_CREAT | 0644);
+    qid = msgget(receiving,0666 | IPC_CREAT);
+    shmaddr_remaining_time = (int *)shmat(shmid, (void *)30, 0);
+    shmaddr_pid = (int *)shmat(shm_pid_id, (void *)60, 0);
+    //--------------------------------------------
+    
+    msgrcv(qid,&algo,sizeof(algo),0,!IPC_NOWAIT);
+    printf("algorithm received is %s\n",algo.name);
+    initClk();
+    while(1){
+        int x = getClk();
+        //--------------------------------------
+        if(strcmp(algo.name,"SJF") == 0){
+
+            if(algo.preemptive == false){
+            SJF(x);   
+            }
+            else{
+            SRT(x); 
+            }
+        }
+        //--------------------------------------
+        else if(strcmp(algo.name,"HPF") == 0){
+            if(algo.preemptive == false){
+            HPF(x);
+            }
+            else{
+            HPF_preemptive(x);
+            }
+        }
+        //--------------------------------------
+        else if(strcmp(algo.name,"RR") == 0){
+            RR(x);
+        }
+        //--------------------------------------
+        else if(strcmp(algo.name,"MFL") == 0){
+            MFL(x);
+        }
+        //--------------------------------------
+    }
+    destroyClk(true);
+    msgctl(receiving,IPC_RMID,NULL);
+    msgctl(remaining,IPC_RMID,NULL);
+    msgctl(qid,IPC_RMID,NULL);
+    raise(SIGUSR1);
+    kill(getppid(),SIGUSR2);
+    exit(0);
+}
+void myhandler(int signum){
+    while(!isEmpty(&ready_queue)){
+        struct PCB *review = peek(&ready_queue);
+        dequeue(&ready_queue);
+        printf("id = %d ->",review->id);
+    }
+    exit(0);
+}
+void myhandler1(int signum){
+    msgctl(receiving,IPC_RMID,NULL);
+    msgctl(remaining,IPC_RMID,NULL);
+    msgctl(qid,IPC_RMID,NULL);
+}
+void myhandler2(int signum){
+    FILE*logs;
+    logs = fopen("logs.txt","w");
+    fprintf(logs,"  id    |   arrival time    |   start time  |   response time   |   burst time  |   finish  time    |     turnaround time     |     weighted turnaround time      |");
+    struct PCB *process_under_review;
+    int turnaround_time = 0;
+    int response_time = 0;
+    int total_finish_time = 0;
+    int total_turnaround_time = 0;
+    int total_response_time =0;
+    int total_work_time = getClk();
+    int num_of_processes = 0;
+    float weighted_turnaround_time =0;
+    float total_weighted_turnaround_time =0;
+    while(finished != NULL){
+        num_of_processes++;
+        process_under_review = peek(&finished);
+        dequeue(&finished);
+        turnaround_time = process_under_review->finishtime-process_under_review->start_time;
+        response_time = process_under_review->start_time - process_under_review->arrivaltime;
+        total_turnaround_time += turnaround_time;
+        total_finish_time += process_under_review->finishtime;
+        total_response_time += response_time;
+        weighted_turnaround_time = turnaround_time / process_under_review->runningtime;
+        fprintf(logs,"  %d        %d        %d      %d       %d      %d        %d       %f",process_under_review->id,process_under_review->arrivaltime,process_under_review->start_time,response_time,process_under_review->runningtime,process_under_review->finishtime,turnaround_time,weighted_turnaround_time);
+    }
+    float average_turnaround = total_turnaround_time / num_of_processes;
+    float average_finish_time = total_finish_time / num_of_processes;
+    float average_response_time = total_response_time / num_of_processes;
+    float average_weighted_turnaround_time = total_weighted_turnaround_time / num_of_processes;
+    float CPU_Utilization = (working/total_work_time)*100;
+    fprintf(logs,"average turnaround time = %f",average_turnaround);
+    fprintf(logs,"average weighted turnaround time = %f",average_weighted_turnaround_time);
+    fprintf(logs,"average finish time = %f",average_finish_time);
+    fprintf(logs,"average response time = %f",average_response_time);
+    fprintf(logs,"CPU Utilization = %f",CPU_Utilization);
+    fclose(logs);
+}
+//----------------------------------------------
+//SJF
+void SJF(int x){
+    int temp = received_process.id;
+    if((running != NULL)){//continue running condition implementation
+        //printf("process running with remaining time = %d\n",(*shmaddr_remaining_time));
+        running->remaining_time = (*shmaddr_remaining_time);
+        if(running->remaining_time == 0){
+            printf("-------------------------------------------------------\n");
+            printf("ended process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            running->finishtime = x;
+            enqueue_rr(&finished,*running);
+            running = NULL;
+            if(!isEmpty(&ready_queue)){
+            running = peek(&ready_queue);
+            dequeue(&ready_queue);
+            running->finishtime = x + running->runningtime + 1;
+            printf("-------------------------------------------------------\n");
+            printf("started new process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid(); 
+                new_process(&(running->remaining_time),shmid);
+            }
+            else if(pid == -1){
+                printf("no processs created ---------------------------\n");
+            }
+            running->start_time = x;
+          }
+        }
+    }
+    else if(running == NULL){
+        if(!isEmpty(&ready_queue)){
+            running = (peek(&ready_queue));
+            dequeue(&ready_queue);
+            running->finishtime = x + running->runningtime + 1;
+            printf("-------------------------------------------------------\n");
+            printf("started new process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }else if(pid == -1){
+                printf("no processs created ---------------------------\n");
+            }
+            running->start_time = x;
+        }
+    }
+    temp = msgrcv(qid,&received_process,sizeof(received_process),0,IPC_NOWAIT);
+    if(temp != -1){
+        enqueue_sjf(&ready_queue,received_process);
+        printf("-------------------------------------------------------\n");
+        printf("received new process with id = %d at process scheduler\n",received_process.id);
+        printf("-------------------------------------------------------\n");
+        
+    }
+    if(running != NULL){
+        working += 1;
+    }
+}
+//----------------------------------------------
+//SRT
+void SRT(int x){
+    int temp = received_process.id;
+    if((running != NULL)){
+        running->remaining_time = (*shmaddr_remaining_time);//continue running condition implementation
+        if((running->remaining_time == 0)){
+            printf("-------------------------------------------------------\n");
+            printf("ended process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            running->finishtime = x;
+            enqueue_rr(&finished,*running);
+            running = NULL;
+            if(!isEmpty(&ready_queue)){
+            running = peek(&ready_queue);
+            dequeue(&ready_queue);
+            printf("-------------------------------------------------------\n");
+            printf("started new process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            running->start_time = x;
+          }
+        }
+        if(peek(&ready_queue)->remaining_time < running->remaining_time){
+            running->remaining_time = (*shmaddr_remaining_time);
+            if(peek(&ready_queue)->remaining_time != peek(&ready_queue)->runningtime){
+            printf("-------------------------------------------------------\n");
+            printf("stopped process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            kill(running->pid,SIGSTOP);
+            enqueue_sjf(&ready_queue,*running);
+            running = peek(&ready_queue);
+            dequeue(&ready_queue);
+            kill(running->pid,SIGCONT);
+            printf("-------------------------------------------------------\n");
+            printf("restarted process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            }
+            else{
+            printf("-------------------------------------------------------\n");
+            printf("stopped process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            kill(running->pid,SIGSTOP);
+            enqueue_sjf(&ready_queue,*running);
+            running = peek(&ready_queue);
+            dequeue(&ready_queue);
+            printf("-------------------------------------------------------\n");
+            printf("started new process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+                }
+                running->start_time = x; 
+            }
+        }
+    }
+    else if(running == NULL){
+        if(!isEmpty(&ready_queue)){
+            running = peek(&ready_queue);
+            dequeue(&ready_queue);
+            running->finishtime = x + running->runningtime + 1;
+            printf("-------------------------------------------------------\n");
+            printf("started new process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            running->start_time = x;
+        }
+    }
+    if(!isEmpty(&blocked_queue) && peek(&blocked_queue)->finishtime == x){
+        enqueue_sjf(&ready_queue,*peek(&blocked_queue));
+        dequeue(&blocked_queue);        
+    }
+    
+    temp = msgrcv(qid,&received_process,sizeof(received_process),0,IPC_NOWAIT);
+    if(temp != -1){
+        enqueue_sjf(&ready_queue,received_process);
+        printf("-------------------------------------------------------\n");
+        printf("received new process with id = %d at process scheduler\n",received_process.id);
+        printf("-------------------------------------------------------\n");
+    }
+    if(running != NULL){
+        working += 1;
+    }
+}
+//---------------------------------------------
+//RR
+void RR(int x){
+    int temp = received_process.id;
+    if((running != NULL)){
+        running->remaining_time = (*shmaddr_remaining_time);//continue running condition implementation
+        if(running->remaining_time == 0){
+            printf("-------------------------------------------------------\n");
+            printf("ended process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            running->finishtime = x;
+            enqueue_rr(&finished,*running);
+            running = NULL;
+            if(!isEmpty(&ready_queue)){
+            running = peek(&ready_queue);
+            dequeue(&ready_queue);
+            printf("-------------------------------------------------------\n");
+            printf("started new process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");           
+            pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            running->start_time = x;
+          }
+        }
+        else if(((running->runningtime - running->remaining_time) %algo.Quantum) == 0){
+            running->remaining_time = (*shmaddr_remaining_time);
+            if(peek(&ready_queue)->remaining_time != peek(&ready_queue)->runningtime){
+                printf("-------------------------------------------------------\n");
+            printf("stopped process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            kill(running->pid,SIGSTOP);
+            enqueue_rr(&ready_queue,*running);
+            running = peek(&ready_queue);
+            dequeue(&ready_queue);
+            kill(running->pid,SIGCONT);
+            printf("-------------------------------------------------------\n");
+            printf("restarted process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            }
+            else{
+            printf("-------------------------------------------------------\n");
+            printf("stopped process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            kill(running->pid,SIGSTOP);
+            enqueue_rr(&ready_queue,*running);
+            running = peek(&ready_queue);
+            dequeue(&ready_queue);
+            printf("-------------------------------------------------------\n");
+            printf("started new process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+                        } 
+            running->start_time = x;
+            }
+        }
+    }
+    else if(running == NULL){
+        if(!isEmpty(&ready_queue) ){
+            running = peek(&ready_queue);
+            dequeue(&ready_queue);            
+            pid = fork();
+            printf("-------------------------------------------------------\n");
+            printf("started new process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            running->start_time = x;
+        }
+    }
+    if(!isEmpty(&blocked_queue) && peek(&blocked_queue)->finishtime == x){
+        enqueue_rr(&ready_queue,*peek(&blocked_queue));
+        dequeue(&blocked_queue);        
+    }
+    temp = msgrcv(qid,&received_process,sizeof(received_process),0,IPC_NOWAIT);
+    if(temp != -1){
+        enqueue_rr(&ready_queue,received_process);
+        printf("-------------------------------------------------------\n");
+        printf("received new process with id = %d at process scheduler\n",received_process.id);
+        printf("-------------------------------------------------------\n");
+    }
+    if(running != NULL){
+        working += 1;
+    }
+}
+//-----------------------------------------------
+//HPF non preemptive
+void HPF(int x){
+    int temp = received_process.id;
+    if((running != NULL)){//continue running condition implementation
+        running->remaining_time = (*shmaddr_remaining_time);
+        if(running->remaining_time == 0){
+            printf("-------------------------------------------------------\n");
+            printf("ended process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            running->finishtime = x;
+            enqueue_rr(&finished,*running);
+            running = NULL;
+            if(!isEmpty(&ready_queue)){
+            running = peek(&ready_queue);
+            dequeue(&ready_queue);
+            running->finishtime = x + running->runningtime + 1;
+            printf("-------------------------------------------------------\n");
+            printf("started new process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            running->start_time = x;
+          }
+        }
+    }
+    else if(running == NULL){
+        if(!isEmpty(&ready_queue)){
+            running = peek(&ready_queue);
+            dequeue(&ready_queue);
+            running->finishtime = x + running->runningtime + 1;
+            printf("-------------------------------------------------------\n");
+            printf("started new process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            running->start_time = x;
+        }
+    }
+    if(!isEmpty(&blocked_queue) && peek(&blocked_queue)->finishtime == x){
+        enqueue_priority(&ready_queue,*peek(&blocked_queue));
+        dequeue(&blocked_queue);        
+    }
+    
+    temp = msgrcv(qid,&received_process,sizeof(received_process),0,IPC_NOWAIT);
+    if(temp != -1){
+        enqueue_priority(&ready_queue,received_process);
+        printf("-------------------------------------------------------\n");
+        printf("received new process with id = %d at process scheduler\n",received_process.id);
+        printf("-------------------------------------------------------\n");
+    }
+    if(running != NULL){
+        working += 1;
+    }
+}
+//--------------------------------------------------------
+//HPF preemptive
+void HPF_preemptive(int x){
+    int temp = received_process.id;
+    if((running != NULL)){
+        running->remaining_time = *shmaddr_remaining_time;//continue running condition implementation
+        if((running->remaining_time == 0)){
+            printf("-------------------------------------------------------\n");
+            printf("ended process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            running->finishtime = x;
+            enqueue_rr(&finished,*running);
+            running = NULL;
+            if(!isEmpty(&ready_queue)){
+            running = peek(&ready_queue);
+            dequeue(&ready_queue);
+            printf("-------------------------------------------------------\n");
+            printf("started new process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            running->start_time = x;
+          }
+        }
+        if(peek(&ready_queue)->priority < running->priority){
+            running->remaining_time = (*shmaddr_remaining_time);
+            if(peek(&ready_queue)->remaining_time != peek(&ready_queue)->runningtime){
+            printf("-------------------------------------------------------\n");
+            printf("stopped process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            kill(running->pid,SIGSTOP);
+            enqueue_priority(&ready_queue,*running);
+            running = peek(&ready_queue);
+            dequeue(&ready_queue);
+            kill(running->pid,SIGCONT);
+            printf("-------------------------------------------------------\n");
+            printf("restarted process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            }
+            else{
+            printf("-------------------------------------------------------\n");
+            printf("stopped process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            kill(running->pid,SIGSTOP);
+            enqueue_priority(&ready_queue,*running);
+            running = peek(&ready_queue);
+            dequeue(&ready_queue);
+            printf("-------------------------------------------------------\n");
+            printf("started new process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+                        }
+            running->start_time = x; 
+            }
+        }
+    }
+    else if(running == NULL){
+        if(!isEmpty(&ready_queue)){
+            running = peek(&ready_queue);
+            dequeue(&ready_queue);
+            running->finishtime = x + running->runningtime + 1;
+            printf("-------------------------------------------------------\n");
+            printf("started new process with id = %d at %d and remaining time %d\n",running->id,getClk(),running->remaining_time);
+            printf("-------------------------------------------------------\n");
+            pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            running->start_time = x;
+        }
+    }
+    if(!isEmpty(&blocked_queue) && peek(&blocked_queue)->finishtime == x){
+        enqueue_priority(&ready_queue,*peek(&blocked_queue));
+        dequeue(&blocked_queue);        
+    }
+    
+    temp = msgrcv(qid,&received_process,sizeof(received_process),0,IPC_NOWAIT);
+    if(temp != -1){
+        enqueue_priority(&ready_queue,received_process);
+        printf("-------------------------------------------------------\n");
+        printf("received new process with id = %d at process scheduler\n",received_process.id);
+        printf("-------------------------------------------------------\n");
+    }
+    if(running != NULL){
+        working += 1;
+    }
+}
+
+void MFL(int x){
+
+int temp = received_process.id;
+ if((running != NULL)){
+        running->remaining_time = *shmaddr_remaining_time;//continue running condition implementation
+        if(running->remaining_time == 0){
+            running->finishtime = x;
+            enqueue_rr(&finished,*running);
+            if(!isEmpty(&MFL_queue[0])){
+            running = peek(&MFL_queue[0]);
+            dequeue(&MFL_queue[0]);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+            else if(!isEmpty(&MFL_queue[1])){
+            running = peek(&MFL_queue[1]);
+            dequeue(&MFL_queue[1]);
+              pid = fork();
+            if(pid == 0){
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[2])){
+            running = peek(&MFL_queue[2]);
+            dequeue(&MFL_queue[2]);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[3])){
+            running = peek(&MFL_queue[3]);
+            dequeue(&MFL_queue[3]);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[4])){
+            running = peek(&MFL_queue[4]);
+            dequeue(&MFL_queue[4]);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[5])){
+            running = peek(&MFL_queue[5]);
+            dequeue(&MFL_queue[5]);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[6])){
+            running = peek(&MFL_queue[6]);
+            dequeue(&MFL_queue[6]);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[7])){
+            running = peek(&MFL_queue[7]);
+            dequeue(&MFL_queue[7]);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[8])){
+            running = peek(&MFL_queue[8]);
+            dequeue(&MFL_queue[8]);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[9])){
+            running = peek(&MFL_queue[9]);
+            dequeue(&MFL_queue[9]);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[10])){
+            running = peek(&MFL_queue[10]);
+            dequeue(&MFL_queue[10]);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+           
+      
+
+        }
+          
+        
+    }
+ 
+     else if( running == NULL || (((running->runningtime - running->remaining_time) %algo.Quantum) == 0) ){
+        if(running != NULL){
+            int number_of_Q=(running->runningtime - running->remaining_time) / algo.Quantum;
+        int indicator=number_of_Q+(running->priority);
+        if(indicator==10){
+            enqueue_rr(&MFL_queue[10],*running);
+
+        }else {
+            enqueue_rr(&MFL_queue[indicator],*running);
+
+        }
+
+        }
+        if(!isEmpty(&MFL_queue[0])){
+            running = peek(&MFL_queue[0]);
+            dequeue(&MFL_queue[0]);
+            kill(0,SIGSTOP);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+            else if(!isEmpty(&MFL_queue[1])){
+            running = peek(&MFL_queue[1]);
+            dequeue(&MFL_queue[1]);
+            kill(0,SIGSTOP);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[2])){
+            running = peek(&MFL_queue[2]);
+            dequeue(&MFL_queue[2]);
+            kill(0,SIGSTOP);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[3])){
+            running = peek(&MFL_queue[3]);
+            dequeue(&MFL_queue[3]);
+            kill(0,SIGSTOP);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[4])){
+            running = peek(&MFL_queue[4]);
+            dequeue(&MFL_queue[4]);
+            kill(0,SIGSTOP);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[5])){
+            running = peek(&MFL_queue[5]);
+            dequeue(&MFL_queue[5]);
+            kill(0,SIGSTOP);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[6])){
+            running = peek(&MFL_queue[6]);
+            dequeue(&MFL_queue[6]);
+            kill(0,SIGSTOP);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[7])){
+            running = peek(&MFL_queue[7]);
+            dequeue(&MFL_queue[7]);
+            kill(0,SIGSTOP);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[8])){
+            running = peek(&MFL_queue[8]);
+            dequeue(&MFL_queue[8]);
+            kill(0,SIGSTOP);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[9])){
+            running = peek(&MFL_queue[9]);
+            dequeue(&MFL_queue[9]);
+            kill(0,SIGSTOP);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+             else if(!isEmpty(&MFL_queue[10])){
+            running = peek(&MFL_queue[10]);
+            dequeue(&MFL_queue[10]);
+            kill(0,SIGSTOP);
+              pid = fork();
+            if(pid == 0){
+                *shmaddr_pid = getpid();
+                new_process(&(running->remaining_time),shmid);
+            }
+            }
+
+
+
+
+
+
+    }
+      
+      
+    
+    temp = msgrcv(qid,&received_process,sizeof(received_process),0,IPC_NOWAIT);
+    if(temp != -1){
+        int p=received_process.priority;
+        
+         enqueue_rr(&MFL_queue[p],received_process);
+
+        
+    }
+
+
+
+
+
+
+ }
+
+void myhandler11(int);
+void myhandler22(int);
+
+void new_process(int*remaining_time,int shmid_process) //savedremaining is equal to bursttime at first then it will be the remaining time when state saved
+{   
+    FILE*logger = fopen("process_logs.txt","w");
+    fprintf(logger,"process started working now and it started decrementing its time %d\n",*remaining_time);
+    fprintf(logger,"-------------------------------------------------------------------------------------\n");
+    shmaddr_remaining_time = remaining_time;
+    int remainingtime;
+    int finishtime;
+    key_t remaining;
+    int mid;
+    int *shmaddr_remaining_time;
+    shmaddr_remaining_time = (int *)shmat(shmid_process, (void *)30, 0);
+    signal(SIGUSR1,myhandler11);
+    signal(SIGUSR2,myhandler22); //to be able to read the shared memory(clock)
+    remainingtime = *remaining_time;
+
+    //TODO The process needs to get the remaining time from somewhere
+    //remainingtime = ??;
+    int x;
+    while (remainingtime > 0)
+    {   x=*shmaddr; //get current time
+        while(x==*shmaddr){
+        } //busy wait till time is incremented one
+        fprintf(logger,"the remaining time is  %d\n and id = %d",x,running->id);
+        remainingtime=remainingtime-1; //Here we're sure that time is incremented
+        *shmaddr_remaining_time = remainingtime;
+
+    }
+    fprintf(logger,"----------------------------------------------------------------------\n");
+    fprintf(logger,"i terminated with remaining time = %d\n",(*shmaddr_remaining_time));
+    fprintf(logger,"----------------------------------------------------------------------\n");
+    finishtime=x+1;
+    //destroyClk(false);
+    kill(getpid(),SIGKILL);
+}
+/*
+int currentstate(){   //this function will be used to save the current state 
+    return remainingtime;
+}
+
+int finish_time(){
+    return finishtime;
+}
+*/
+void myhandler11(int signum){
+}
+void myhandler22(int signum){
+    
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//-----------------------------------------------
+//At beginning: find a way of commmunication between scheduler and process generator to put new processes in the ready queue which will have different structure according to the type of algorithm
+
+
+    //Notes about processes:  1)Creation of a process: by fork() then if we're in child call the functions in process.c 
+    //                        2)Stop a process: a)call function currentstate in process.c b)save the state c)kill that child(that doesn't mean that the process has completed as the scheduler still has its PCB)
+
+    //Notes about any algorithm:  1)any algorithm will be working in a while(1){} where the first line in this loop is to check whether there's a new processs arrived or not (message queue between scheduler and process generator)
+    //                            2)when an algorithm selects a new process to run: a)put the PCB of runnning in the ready queue but check if its not null first 
+    //                                                                              b)running=PCB of the selected process
+    
+    
+    
+    
+    //TODO: implement the scheduler.
+
+    //TODO: upon termination release the clock resources.

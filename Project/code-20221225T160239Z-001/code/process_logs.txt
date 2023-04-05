@@ -1,0 +1,162 @@
+SJF
+case 1
+  id    |   arrival time    |   start time  |   response time   |   burst time  |   finish  time    |     turnaround time     |     weighted turnaround time      |
+  1               6                  7                 1                29                37                      31                          1.068966
+  3               8                 37                29                 7                44                      36                          5.142857
+  2               7                 44                37                12                56                      49                          4.083333
+average turnaround time = 38.666668
+average weighted turnaround time = 0.000000
+average finish time = 45.666668
+average response time = 22.333334
+CPU Utilization = 85.964912
+case 2
+  id    |   arrival time    |   start time  |   response time   |   burst time  |   finish  time    |     turnaround time     |     weighted turnaround time      |
+  1              6                   7                1                  29               37                     31                         1.000000
+  4              23                  37               14                  2               40                     17                         8.000000
+  3               7                  40               33                  7               48                     41                         5.000000
+  2              14                  48               34                 12               60                     46                         3.000000
+average turnaround time = 33.000000
+average weighted turnaround time = 4.000000
+average finish time = 46.000000
+average response time = 20.000000
+CPU Utilization = 91.0233323
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+HPF
+case 1  
+  id    |   arrival time    |   start time  |   response time   |   burst time  |   finish  time    |     turnaround time     |     weighted turnaround time      |
+  1               6                  7                 1                29                37                      31                      1.068966
+  3               8                 37                29                 7                45                      37                      5.285714
+  2               7                 45                38                12                57                      50                      4.166667
+average turnaround time = 39.333332
+average weighted turnaround time = 0.000000
+average finish time = 46.333332
+average response time = 22.666666
+CPU Utilization = 86.206894
+case 2
+  id    |   arrival time    |   start time  |   response time   |   burst time  |   finish  time    |     turnaround time     |     weighted turnaround time      |
+  1               6                  6                  0               29                35                      29                        1.000000
+  3               7                 35                 28                7                42                      35                        5.000000
+  2              14                 42                 28               12                54                      40                        3.000000
+  4              23                 54                 31                2                56                       33                       16.000000
+average turnaround time = 34.000000
+average weighted turnaround time = 7.000000
+average finish time = 46.000000
+average response time = 21.000000
+CPU Utilization = 92.675254
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SRT
+case 1 
+  id    |   arrival time    |   start time  |   response time   |   burst time  |   finish  time    |     turnaround time     |     weighted turnaround time      |
+  3               8                  9                1                  7                17                      9                         1.000000
+  2               7                  8                1                 12                28                     21                         1.000000
+  1               6                  7                1                 29                55                     49                         1.000000
+average turnaround time = 26.000000
+average weighted turnaround time = 1.000000
+average finish time = 33.000000
+average response time = 1.000000
+CPU Utilization = 96.363636
+case 2
+  id    |   arrival time    |   start time  |   response time   |   burst time  |   finish  time    |     turnaround time     |     weighted turnaround time      |
+  2               14                14                 0                12                27                      13                          1.000000
+  4               23                27                 4                 2                30                       7                          3.000000
+  3               21                30                 9                 7                38                      17                          2.000000
+  1                6                 7                 1                29                60                      54                          1.000000
+average turnaround time = 22.000000
+average weighted turnaround time = 1.000000
+average finish time = 38.000000
+average response time = 3.000000
+CPU Utilization = 80
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+HPF preemptive
+case 1 
+  id    |   arrival time    |   start time  |   response time   |   burst time  |   finish  time    |     turnaround time     |     weighted turnaround time      |
+  3               8                  9                  1                7                17                      9                         1.000000
+  1               6                  7                  1               29                45                     39                         1.000000
+  2               7                 45                 38               12                57                     50                         4.000000
+average turnaround time = 32.000000
+average weighted turnaround time = 2.000000
+average finish time = 39.000000
+average response time = 13.000000
+CPU Utilization = 99.999998
+case 2
+  id    |   arrival time    |   start time  |   response time   |   burst time  |   finish  time    |     turnaround time     |     weighted turnaround time      |
+  3               21                22                  1                7                30                      9                         1.000000
+  1                6                 7                  1               29                44                     38                         1.000000
+  2               14                44                 30               12                57                     43                         3.000000
+  4               23                57                 34                2                59                     36                         18.000000
+average turnaround time = 31.000000
+average weighted turnaround time = 3.000000
+average finish time = 47.000000
+average response time = 16.000000
+CPU Utilization = 91.228070
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+RR
+case 1
+  id    |   arrival time    |   start time  |   response time   |   burst time  |   finish  time    |     turnaround time     |     weighted turnaround time      |
+  3                8                 13                 5                7                26                       18                       2.142857
+  2                7                 14                 7               12                31                       24                       1.916667
+  1                6                  6                 0               29                47                       41                       1.413793
+average turnaround time = 27.000000
+average weighted turnaround time = 1.000000
+average finish time = 34.000000
+average response time = 4.000000
+CPU Utilization = 82
+case 2 is same input with Quantum = 2
+case 2
+  id    |   arrival time    |   start time  |   response time   |   burst time  |   finish  time    |     turnaround time     |     weighted turnaround time      |
+  3                8                10                  2                7                29                      21                        3.000000
+  2                7                 8                  1               12                31                      24                        2.000000
+  1                6                 6                  0               29                48                      42                        1.000000
+average turnaround time = 29.000000
+average weighted turnaround time = 1.000000
+average finish time = 36.000000
+average response time = 1.000000
+CPU Utilization = 0.84
+same as first 2 cases but with Quantum = 3
+case 3 
+  id    |   arrival time    |   start time  |   response time   |   burst time  |   finish  time    |     turnaround time     |     weighted turnaround time      |
+  3               8                 12                  4                7                31                      23                       3.000000
+  2               7                  9                  2               12                34                      27                       2.000000
+  1               6                  6                  0               29                50                      44                       1.000000
+average turnaround time = 31.000000
+average weighted turnaround time = 2.000000
+average finish time = 38.000000
+average response time = 2.000000
+CPU Utilization = 88
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+MFL
+Quantum = 1
+case 1 
+  id    |   arrival time    |   start time  |   response time   |   burst time  |   finish  time    |     turnaround time     |     weighted turnaround time      |
+  3                8                10                 2                 7                23                      15                        2.142857
+  2                7                 8                 1                12                30                      23                        1.916667
+  1                6                 7                 1                29                47                      41                        1.413793
+average turnaround time = 26.333334
+average weighted turnaround time = 1.824439
+average finish time = 33.333332
+average response time = 1.333333
+CPU Utilization = 83.333328
+Quantum = 2
+case 2
+  id    |   arrival time    |   start time  |   response time   |   burst time  |   finish  time    |     turnaround time     |     weighted turnaround time      |
+  3               8                 10                  2                7                25                      17                        2.428571
+  2               7                 17                 10               12                34                      27                        2.250000
+  1               6                  7                  1               29                48                      42                        1.448276
+average turnaround time = 28.666666
+average weighted turnaround time = 2.0422828
+average finish time = 35.666668
+average response time = 4.333333
+CPU Utilization = 83.673470
+Quantumn = 3
+case 3
+
+  id    |   arrival time    |   start time  |   response time   |   burst time  |   finish  time    |     turnaround time     |     weighted turnaround time      |
+  3                8                10                  2                7                23                      15                        2.142857
+  2                7                19                 12               12                39                      32                        2.666667
+  1                6                 6                  0               29                52                      46                        1.586207
+average turnaround time = 31.000000
+average weighted turnaround time = 2.131910
+average finish time = 38.000000
+average response time = 4.666667
+CPU Utilization = 86.792450
+//-------------------------------------------------------------------------------------------------------------------------------------------------------------------

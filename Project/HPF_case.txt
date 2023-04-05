@@ -1,0 +1,150 @@
+HPF
+id 1   arrival time 6   running time 29   priorty 3   remianing time 0.000000
+id 2   arrival time 7   running time 12   priorty 5   remianing time 0.000000
+id 3   arrival time 8   running time 7   priorty 2   remianing time 0.000000
+Current Time is 0
+Current Time is 0
+scheduler started
+algorithm received is HPF and process count 3
+Clock Starting...
+process id 1 arrived at 6 and is sent to scheduler
+Current Time is 6
+process id 2 arrived at 7 and is sent to scheduler
+new head process with id = 1 with remaining time 29 at process scheduler
+process possible dequeue 2
+Current Time is 7
+dequeuing process with id = 1 with remaining time 29 at process scheduler
+-------------------------------------------------------started new process with id = 1 and remaining time = 29-------------------------------------------------------
+the process remaining time  is 29 and key is 262165
+the current time inside process  is 29
+new head process with id = 2 with remaining time 12 at process scheduler
+process id 3 arrived at 8 and is sent to scheduler
+process generator is done
+the current time inside process  is 28
+new head process with id = 3 with remaining time 7 at process scheduler
+the current time inside process  is 27
+the current time inside process  is 26
+the current time inside process  is 25
+the current time inside process  is 24
+the current time inside process  is 23
+the current time inside process  is 22
+the current time inside process  is 21
+the current time inside process  is 20
+the current time inside process  is 19
+the current time inside process  is 18
+the current time inside process  is 17
+the current time inside process  is 16
+the current time inside process  is 15
+the current time inside process  is 14
+the current time inside process  is 13
+the current time inside process  is 12
+the current time inside process  is 11
+the current time inside process  is 10
+the current time inside process  is 9
+the current time inside process  is 8
+the current time inside process  is 7
+the current time inside process  is 6
+the current time inside process  is 5
+the current time inside process  is 4
+the current time inside process  is 3
+the current time inside process  is 2
+the current time inside process  is 1
+i terminated with remaining time = 0
+process possible dequeue 1
+received new process with id = 1 with remaining time 29 at process scheduler
+new head process with id = 1 with remaining time 29 at process scheduler --- 1
+printing ready queue
+id = 1 ->NULL
+dequeuing process with id = 3 with remaining time 7 at process scheduler
+-------------------------------------------------------started new process with id = 3 and remaining time = 7-------------------------------------------------------
+the process remaining time  is 7 and key is 262165
+the current time inside process  is 7
+the current time inside process  is 6
+the current time inside process  is 5
+the current time inside process  is 4
+the current time inside process  is 3
+the current time inside process  is 2
+the current time inside process  is 1
+i terminated with remaining time = 0
+process possible dequeue 1
+received new process with id = 3 with remaining time 7 at process scheduler
+printing ready queue
+id = 1 ->id = 3 ->NULL
+new head process with id = 1 with remaining time 29 at process scheduler --- 2
+dequeuing process with id = 2 with remaining time 12 at process scheduler
+-------------------------------------------------------started new process with id = 2 and remaining time = 12-------------------------------------------------------
+the process remaining time  is 12 and key is 262165
+counter started
+the current time inside process  is 12
+counter ended 0
+printing ready queue
+id = 1 ->id = 3 ->NULL
+the current time inside process  is 11
+counter started
+counter ended 0
+printing ready queue
+id = 1 ->id = 3 ->NULL
+counter started
+the current time inside process  is 10
+counter ended 0
+printing ready queue
+id = 1 ->id = 3 ->NULL
+counter started
+the current time inside process  is 9
+counter ended 0
+printing ready queue
+id = 1 ->id = 3 ->NULL
+counter started
+the current time inside process  is 8
+counter ended 0
+printing ready queue
+id = 1 ->id = 3 ->NULL
+the current time inside process  is 7
+counter started
+counter ended 0
+printing ready queue
+id = 1 ->id = 3 ->NULL
+counter started
+the current time inside process  is 6
+counter ended 0
+printing ready queue
+id = 1 ->id = 3 ->NULL
+the current time inside process  is 5
+counter started
+counter ended 0
+printing ready queue
+id = 1 ->id = 3 ->NULL
+counter started
+counter ended 0
+printing ready queue
+id = 1 ->id = 3 ->NULL
+the current time inside process  is 4
+the current time inside process  is 3
+counter started
+counter ended 0
+printing ready queue
+id = 1 ->id = 3 ->NULL
+counter started
+counter ended 0
+printing ready queue
+id = 1 ->id = 3 ->NULL
+the current time inside process  is 2
+the current time inside process  is 1
+counter started
+counter ended 0
+printing ready queue
+id = 1 ->id = 3 ->NULL
+i terminated with remaining time = 0
+process possible dequeue 1
+received new process with id = 2 with remaining time 12 at process scheduler
+printing ready queue
+id = 1 ->id = 3 ->id = 2 ->NULL
+new head process with id = 1 with remaining time 29 at process scheduler --- 2
+counter started
+counter ended 1
+printing ready queue
+id = 1 ->id = 3 ->id = 2 ->NULL
+printing ready queue
+id = 1 ->id = 3 ->id = 2 ->NULL
+working 50
+logs are printing now

@@ -1,0 +1,55 @@
+#include "headers.h"
+
+/* Modify this file as needed*/
+void myhandler11(int);
+void myhandler22(int);
+
+int new_process(int remaining_time,int shmid_process) //savedremaining is equal to bursttime at first then it will be the remaining time when state saved
+{   
+    *shmaddr = remaining_time;
+    int remainingtime;
+    int finishtime;
+    key_t remaining;
+    int mid;
+    int *shmaddr;
+    printf("the process remaining time  is %d\n",remaining_time);
+    shmaddr = (int *)shmat(shmid_process, (void *)1, 0);
+    signal(SIGUSR1,myhandler11);
+    signal(SIGUSR2,myhandler22); //to be able to read the shared memory(clock)
+    remainingtime=remaining_time;
+
+    //TODO The process needs to get the remaining time from somewhere
+    //remainingtime = ??;
+
+    int x;
+    while (remainingtime > 0)
+    {
+        *shmaddr = remainingtime;
+        x=getClk(); //get current time
+        while(x==getClk()){
+        } //busy wait till time is incremented one
+        printf("the current time is %d\n",x);
+        remainingtime=remainingtime-1; //Here we're sure that time is incremented
+        *shmaddr = remainingtime;
+
+    }
+    
+    finishtime=x+1;
+    //destroyClk(false);
+    printf("i terminated with remaining time = %d\n",(*shmaddr));
+    kill(getpid(),SIGKILL);
+}
+/*
+int currentstate(){   //this function will be used to save the current state 
+    return remainingtime;
+}
+
+int finish_time(){
+    return finishtime;
+}
+*/
+void myhandler11(int signum){
+}
+void myhandler22(int signum){
+    
+}

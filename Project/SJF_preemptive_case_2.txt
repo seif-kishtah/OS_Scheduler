@@ -1,0 +1,213 @@
+SJF
+1
+id 1   arrival time 6   running time 29   priorty 3   remianing time 29
+id 2   arrival time 14   running time 12   priorty 5   remianing time 12
+id 3   arrival time 21   running time 7   priorty 2   remianing time 7
+id 4   arrival time 23   running time 2   priorty 6   remianing time 2
+Current Time is 0
+Current Time is 0
+scheduler started
+algorithm received is SJF and process count 4
+Clock Starting...
+process id 1 arrived at 6 and is sent to scheduler
+Current Time is 6
+received new process with id = 1 with remaining time 29 at process scheduler
+new head process with id = 1 with remaining time 29 at process scheduler
+dequeuing process with id = 1 with remaining time 29 at process scheduler
+-------------------------------------------------------started new process with id = 1 and remaining time = 29-------------------------------------------------------
+the process pid is 16020
+the process remaining time  is 29 and key is 65599
+the current time inside process  is 29
+the current time inside process  is 28
+the current time inside process  is 27
+the current time inside process  is 26
+the current time inside process  is 25
+the current time inside process  is 24
+process id 2 arrived at 14 and is sent to scheduler
+Current Time is 14
+received new process with id = 2 with remaining time 12 at process scheduler
+new head process with id = 2 with remaining time 12 at process scheduler
+received new process with id = 1 with remaining time 23 at process scheduler
+new head process with id = 2 with remaining time 12 at process scheduler
+dequeuing process with id = 2 with remaining time 12 at process scheduler
+-------------------------------------------------------started new process with id = 2 and remaining time = 12-------------------------------------------------------
+the process pid is 16048
+the process remaining time  is 12 and key is 65599
+the current time inside process  is 12
+the current time inside process  is 11
+the current time inside process  is 10
+the current time inside process  is 9
+the current time inside process  is 8
+the current time inside process  is 7
+process id 3 arrived at 21 and is sent to scheduler
+Current Time is 21
+the current time inside process  is 6
+received new process with id = 3 with remaining time 7 at process scheduler
+new head process with id = 3 with remaining time 7 at process scheduler
+the current time inside process  is 5
+process id 4 arrived at 23 and is sent to scheduler
+the current time inside process  is 4
+process generator is done
+received new process with id = 4 with remaining time 2 at process scheduler
+the current time inside process  is 3
+new head process with id = 4 with remaining time 2 at process scheduler
+the current time inside process  is 2
+the current time inside process  is 1
+i terminated with remaining time = 0
+received new process with id = 2 with remaining time 1 at process scheduler
+new head process with id = 2 with remaining time 1 at process scheduler --- 1
+printing ready queue
+id = 2 ->NULL
+dequeuing process with id = 4 with remaining time 2 at process scheduler
+-------------------------------------------------------started new process with id = 4 and remaining time = 2-------------------------------------------------------
+the process pid is 16100
+the process remaining time  is 2 and key is 65599
+the current time inside process  is 2
+the current time inside process  is 1
+i terminated with remaining time = 0
+received new process with id = 4 with remaining time 1 at process scheduler
+printing ready queue
+id = 2 ->id = 4 ->NULL
+new head process with id = 2 with remaining time 1 at process scheduler --- 2
+dequeuing process with id = 3 with remaining time 7 at process scheduler
+-------------------------------------------------------started new process with id = 3 and remaining time = 7-------------------------------------------------------
+the process pid is 16101
+the process remaining time  is 7 and key is 65599
+the current time inside process  is 7
+the current time inside process  is 6
+the current time inside process  is 5
+the current time inside process  is 4
+the current time inside process  is 3
+the current time inside process  is 2
+the current time inside process  is 1
+i terminated with remaining time = 0
+received new process with id = 3 with remaining time 1 at process scheduler
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+new head process with id = 2 with remaining time 1 at process scheduler --- 2
+dequeuing process with id = 1 with remaining time 23 at process scheduler
+the process pid is 16020
+-------------------------------------------------------restarted process with id = 1 and remaining time = 23-------------------------------------------------------
+the current time inside process  is 23
+counter started
+the current time inside process  is 22
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+counter started
+the current time inside process  is 21
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+the current time inside process  is 20
+counter started
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+counter started
+the current time inside process  is 19
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+counter started
+the current time inside process  is 18
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+counter started
+the current time inside process  is 17
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+the current time inside process  is 16
+counter started
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+counter started
+the current time inside process  is 15
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+the current time inside process  is 14
+counter started
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+the current time inside process  is 13
+counter started
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+the current time inside process  is 12
+counter started
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+the current time inside process  is 11
+counter started
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+the current time inside process  is 10
+counter started
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+the current time inside process  is 9
+counter started
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+counter started
+the current time inside process  is 8
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+the current time inside process  is 7
+counter started
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+the current time inside process  is 6
+counter started
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+the current time inside process  is 5
+counter started
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+counter started
+the current time inside process  is 4
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+the current time inside process  is 3
+counter started
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+the current time inside process  is 2
+counter started
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+the current time inside process  is 1
+counter started
+counter ended 0
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->NULL
+received new process with id = 1 with remaining time 23 at process scheduler
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->id = 1 ->NULL
+new head process with id = 2 with remaining time 1 at process scheduler --- 2
+i terminated with remaining time = 0
+counter started
+counter ended 1
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->id = 1 ->NULL
+printing ready queue
+id = 2 ->id = 4 ->id = 3 ->id = 1 ->NULL
+working 53
